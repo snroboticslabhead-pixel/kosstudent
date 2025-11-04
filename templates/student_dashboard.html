@@ -1,0 +1,388 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
+        <div class="mb-2 mb-md-0">
+            <h2 class="mb-1"><i class="fas fa-home me-2"></i> Dashboard</h2>
+            <p class="text-muted mb-0">Welcome back, {{ student.name }}</p>
+        </div>
+        <div class="d-flex flex-wrap justify-content-center justify-content-md-start gap-2">
+            <span class="badge bg-primary">{{ student.campus }}</span>
+            <span class="badge bg-info">{{ student.grade }}</span>
+        </div>
+    </div>
+
+    <!-- Student Info Card -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-8 mb-3 mb-md-0">
+                    <h5 class="card-title mb-2">Student Information</h5>
+                    <div class="row">
+                        <div class="col-sm-6 mb-2">
+                            <small class="text-muted">Student ID</small>
+                            <p class="mb-0 fw-semibold">{{ student.studentID }}</p>
+                        </div>
+                        <div class="col-sm-6 mb-2">
+                            <small class="text-muted">Campus</small>
+                            <p class="mb-0">{{ student.campus }}</p>
+                        </div>
+                        <div class="col-sm-6 mb-2">
+                            <small class="text-muted">Grade</small>
+                            <p class="mb-0">{{ student.grade }}</p>
+                        </div>
+                        <div class="col-sm-6 mb-2">
+                            <small class="text-muted">Section</small>
+                            <p class="mb-0">{{ student.section }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-center">
+                    <div class="circular-progress-container mb-2">
+                        <div class="circular-progress">
+                            <svg width="100" height="100" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="40" fill="none" stroke="#E5E5EA" stroke-width="8"></circle>
+                                <circle cx="50" cy="50" r="40" fill="none" stroke="#007AFF" stroke-width="8" 
+                                        stroke-dasharray="251.2" stroke-dashoffset="{% set total_tasks = task_status|length %}{% set completed_tasks = task_status|selectattr('completed')|list|length %}{% if total_tasks > 0 %}{{ 251.2 - (251.2 * completed_tasks / total_tasks) }}{% else %}251.2{% endif %}" 
+                                        stroke-linecap="round" transform="rotate(-90 50 50)"></circle>
+                            </svg>
+                            <div class="progress-text">
+                                {% if total_tasks > 0 %}
+                                    {{ ((completed_tasks / total_tasks) * 100)|round|int }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-muted mb-0">Overall Progress</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Overview -->
+    <div class="row g-3 g-md-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-clipboard-list fa-2x fa-md-3x text-primary mb-2"></i>
+                    <h3 class="mb-1">{{ task_status|length }}</h3>
+                    <p class="text-muted mb-0">Total Tasks</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-check-circle fa-2x fa-md-3x text-success mb-2"></i>
+                    <h3 class="mb-1">{{ task_status|selectattr('completed')|list|length }}</h3>
+                    <p class="text-muted mb-0">Completed</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-clock fa-2x fa-md-3x text-warning mb-2"></i>
+                    <h3 class="mb-1">{{ task_status|rejectattr('completed')|list|length }}</h3>
+                    <p class="text-muted mb-0">Pending</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-code fa-2x fa-md-3x text-info mb-2"></i>
+                    <h3 class="mb-1">Practice</h3>
+                    <p class="text-muted mb-0">Code Lab</p>
+                    <a href="{{ url_for('practice_editor') }}" class="btn btn-info btn-sm mt-1">
+                        <i class="fas fa-play me-1"></i> Start
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Tabs -->
+    <div class="card">
+        <div class="card-header bg-white">
+            <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="all-tasks-tab" data-bs-toggle="tab" data-bs-target="#all-tasks" type="button" role="tab">
+                        All Tasks
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="pending-tasks-tab" data-bs-toggle="tab" data-bs-target="#pending-tasks" type="button" role="tab">
+                        Pending
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="completed-tasks-tab" data-bs-toggle="tab" data-bs-target="#completed-tasks" type="button" role="tab">
+                        Completed
+                    </button>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body">
+            <div class="tab-content" id="tasksTabContent">
+                <!-- All Tasks Tab -->
+                <div class="tab-pane fade show active" id="all-tasks" role="tabpanel">
+                    {% if task_status %}
+                    <div class="row g-3 g-md-3">
+                        {% for item in task_status %}
+                        <div class="col-12">
+                            <div class="card task-card h-100 {% if item.completed %}border-success{% else %}border-warning{% endif %}">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <h5 class="card-title mb-1">{{ item.task.title }}</h5>
+                                            <span class="badge bg-{{ 'primary' if item.task.language == 'arduino' else 'success' }}">
+                                                {{ item.task.language|title }}
+                                            </span>
+                                        </div>
+                                        {% if item.completed %}
+                                        <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i> Completed</span>
+                                        {% else %}
+                                        <span class="badge bg-warning"><i class="fas fa-clock me-1"></i> Pending</span>
+                                        {% endif %}
+                                    </div>
+                                    <p class="card-text text-muted">{{ item.task.description[:100] }}{% if item.task.description|length > 100 %}...{% endif %}</p>
+                                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center">
+                                        <small class="text-muted mb-1 mb-sm-0">
+                                            {% if item.completed %}
+                                                Completed on: {{ item.completed_date.strftime('%Y-%m-%d') if item.completed_date else 'N/A' }}
+                                            {% else %}
+                                                Not started
+                                            {% endif %}
+                                        </small>
+                                        <a href="{{ url_for('web_editor', task_id=item.task._id) }}" class="btn btn-{{ 'success' if item.completed else 'primary' }} btn-sm">
+                                            <i class="fas fa-{{ 'eye' if item.completed else 'code' }}"></i> 
+                                            {{ 'View' if item.completed else 'Start' }}
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-clipboard-list fa-3x text-muted mb-2"></i>
+                        <h5 class="text-muted">No Tasks Assigned</h5>
+                        <p class="text-muted">You don't have any tasks assigned yet.</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Pending Tasks Tab -->
+                <div class="tab-pane fade" id="pending-tasks" role="tabpanel">
+                    {% set pending_tasks = task_status|rejectattr('completed')|list %}
+                    {% if pending_tasks %}
+                    <div class="row g-3 g-md-3">
+                        {% for item in pending_tasks %}
+                        <div class="col-12">
+                            <div class="card task-card h-100 border-warning">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <h5 class="card-title mb-1">{{ item.task.title }}</h5>
+                                            <span class="badge bg-{{ 'primary' if item.task.language == 'arduino' else 'success' }}">
+                                                {{ item.task.language|title }}
+                                            </span>
+                                        </div>
+                                        <span class="badge bg-warning"><i class="fas fa-clock me-1"></i> Pending</span>
+                                    </div>
+                                    <p class="card-text text-muted">{{ item.task.description[:100] }}{% if item.task.description|length > 100 %}...{% endif %}</p>
+                                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center">
+                                        <small class="text-muted mb-1 mb-sm-0">Not started</small>
+                                        <a href="{{ url_for('web_editor', task_id=item.task._id) }}" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-code"></i> Start
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-check-circle fa-3x text-success mb-2"></i>
+                        <h5 class="text-muted">All Tasks Completed!</h5>
+                        <p class="text-muted">Great job! You've completed all your tasks.</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Completed Tasks Tab -->
+                <div class="tab-pane fade" id="completed-tasks" role="tabpanel">
+                    {% set completed_tasks = task_status|selectattr('completed')|list %}
+                    {% if completed_tasks %}
+                    <div class="row g-3 g-md-3">
+                        {% for item in completed_tasks %}
+                        <div class="col-12">
+                            <div class="card task-card h-100 border-success">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <h5 class="card-title mb-1">{{ item.task.title }}</h5>
+                                            <span class="badge bg-{{ 'primary' if item.task.language == 'arduino' else 'success' }}">
+                                                {{ item.task.language|title }}
+                                            </span>
+                                        </div>
+                                        <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i> Completed</span>
+                                    </div>
+                                    <p class="card-text text-muted">{{ item.task.description[:100] }}{% if item.task.description|length > 100 %}...{% endif %}</p>
+                                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center">
+                                        <small class="text-muted mb-1 mb-sm-0">
+                                            Completed on: {{ item.completed_date.strftime('%Y-%m-%d') if item.completed_date else 'N/A' }}
+                                        </small>
+                                        <a href="{{ url_for('web_editor', task_id=item.task._id) }}" class="btn btn-success btn-sm">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-clipboard-list fa-3x text-muted mb-2"></i>
+                        <h5 class="text-muted">No Completed Tasks</h5>
+                        <p class="text-muted">Complete your first task to see it here.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.circular-progress-container {
+    display: inline-block;
+    position: relative;
+}
+
+.circular-progress {
+    position: relative;
+    display: inline-block;
+}
+
+.progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.task-card {
+    transition: all 0.3s ease;
+}
+
+.task-card:hover {
+    transform: translateY(-5px);
+}
+
+/* Mobile-specific styles */
+@media (max-width: 767.98px) {
+    .dashboard h2 {
+        font-size: 1.5rem;
+    }
+    
+    .circular-progress-container {
+        width: 80px !important;
+        height: 80px !important;
+    }
+    
+    .circular-progress {
+        width: 80px !important;
+        height: 80px !important;
+    }
+    
+    .circular-progress svg {
+        width: 80px !important;
+        height: 80px !important;
+    }
+    
+    .circular-progress .progress-text {
+        font-size: 16px;
+    }
+    
+    .card-title {
+        font-size: 1.1rem;
+    }
+    
+    .task-card {
+        margin-bottom: 0.75rem;
+    }
+    
+    .nav-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .nav-tabs .nav-link {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.9rem;
+    }
+    
+    /* Fix for header collapsing */
+    .top-header {
+        padding: 0.6rem 1rem !important;
+    }
+    
+    .header-logo {
+        height: 32px !important;
+    }
+    
+    .header-text {
+        font-size: 16px !important;
+    }
+    
+    .profile-name {
+        font-size: 13px !important;
+    }
+    
+    .profile-icon {
+        font-size: 16px !important;
+    }
+    
+    .main-content {
+        padding-top: 50px !important;
+    }
+    
+    .sidebar {
+        padding-top: 50px !important;
+    }
+    
+    /* Dropdown adjustments for mobile */
+    .dropdown-menu {
+        font-size: 0.9rem;
+    }
+    
+    .dropdown-item {
+        padding: 0.4rem 0.8rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize Bootstrap dropdowns
+    document.addEventListener('DOMContentLoaded', function() {
+        var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'))
+        var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
+            return new bootstrap.Dropdown(dropdownToggleEl)
+        });
+    });
+</script>
+{% endblock %}

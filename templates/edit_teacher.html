@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard">
+    <h2 class="mb-3"><i class="fas fa-user-edit me-2"></i> Edit Teacher</h2>
+    <div class="card">
+        <div class="card-body">
+            {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+            {% endif %}
+            <form method="POST">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Teacher ID *</label>
+                        <input type="text" name="teacherID" class="form-control" value="{{ teacher.teacherID }}" readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Full Name *</label>
+                        <input type="text" name="name" class="form-control" value="{{ teacher.name }}" required>
+                    </div>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Email *</label>
+                        <input type="email" name="email" class="form-control" value="{{ teacher.email }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Campus *</label>
+                        <select name="campus" class="form-select" required>
+                            <option value="">Select Campus</option>
+                            <option value="Subhash Nagar" {% if teacher.campus == 'Subhash Nagar' %}selected{% endif %}>Subhash Nagar</option>
+                            <option value="Yamuna" {% if teacher.campus == 'Yamuna' %}selected{% endif %}>Yamuna</option>
+                            <option value="I20" {% if teacher.campus == 'I20' %}selected{% endif %}>I20</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Password (leave blank to keep current)</label>
+                    <input type="password" name="password" class="form-control" placeholder="Enter new password">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Permissions</label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="can_manage_students" id="can_manage_students" 
+                               {% if teacher.can_manage_students %}checked{% endif %}>
+                        <label class="form-check-label" for="can_manage_students">
+                            Can Manage Students (Add/Edit/Delete)
+                        </label>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="can_manage_tasks" id="can_manage_tasks"
+                               {% if teacher.can_manage_tasks %}checked{% endif %}>
+                        <label class="form-check-label" for="can_manage_tasks">
+                            Can Manage Tasks (Add/Edit/Delete)
+                        </label>
+                    </div>
+                    <small class="text-muted">Select which management features this teacher can access</small>
+                </div>
+                <div class="d-flex justify-content-end">
+                    <a href="{{ url_for('manage_teachers') }}" class="btn btn-secondary me-2">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Update Teacher</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

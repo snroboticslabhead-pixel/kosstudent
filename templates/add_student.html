@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard">
+    <h2 class="mb-4"><i class="fas fa-user-plus me-2"></i> Add New Student</h2>
+    <div class="card">
+        <div class="card-body">
+            {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+            {% endif %}
+            <form method="POST">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Student ID *</label>
+                        <input type="text" name="studentID" class="form-control" placeholder="e.g., SUB-101" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Full Name *</label>
+                        <input type="text" name="name" class="form-control" placeholder="Enter full name" required>
+                    </div>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Campus *</label>
+                        <select name="campus" class="form-select" required>
+                            <option value="">Select Campus</option>
+                            <option value="Subhash Nagar">Subhash Nagar</option>
+                            <option value="Yamuna">Yamuna</option>
+                            <option value="I20">I20</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Grade *</label>
+                        <select name="grade" class="form-select" required>
+                            <option value="">Select Grade</option>
+                            {% for i in range(1, 11) %}
+                            <option value="{{ i }}th Class">{{ i }}th Class</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Section *</label>
+                        <select name="section" class="form-select" required>
+                            <option value="">Select Section</option>
+                            {% for section in sections %}
+                            <option value="{{ section }}">{{ section }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Password *</label>
+                    <input type="password" name="password" class="form-control" value="123456" required>
+                    <small class="text-muted">Default password: 123456</small>
+                </div>
+                <div class="d-flex justify-content-end">
+                    <a href="{{ url_for('manage_students') }}" class="btn btn-secondary me-2">Back</a>
+                    <button type="submit" class="btn btn-primary">Save Student</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0"><i class="fas fa-tachometer-alt me-2"></i> Dashboard</h2>
+        <div class="d-flex align-items-center">
+            <span class="text-muted me-3">Welcome, {{ teacher.name }}</span>
+            <span class="badge bg-primary">{{ teacher.campus }}</span>
+        </div>
+    </div>
+    
+    <!-- Permissions Card -->
+    <div class="card mb-3">
+        <div class="card-header">
+            <h5><i class="fas fa-user-shield me-2"></i> Your Permissions</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="form-check form-switch me-2">
+                            <input class="form-check-input" type="checkbox" id="studentMgmtPerm" 
+                                   {% if teacher.can_manage_students %}checked{% endif %} disabled>
+                            <label class="form-check-label" for="studentMgmtPerm"></label>
+                        </div>
+                        <span>Manage Students</span>
+                    </div>
+                    <p class="text-muted ms-4">
+                        {% if teacher.can_manage_students %}
+                        You can add, edit, and delete students in your campus.
+                        {% else %}
+                        You can view students but cannot modify them.
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="form-check form-switch me-2">
+                            <input class="form-check-input" type="checkbox" id="taskMgmtPerm" 
+                                   {% if teacher.can_manage_tasks %}checked{% endif %} disabled>
+                            <label class="form-check-label" for="taskMgmtPerm"></label>
+                        </div>
+                        <span>Manage Tasks</span>
+                    </div>
+                    <p class="text-muted ms-4">
+                        {% if teacher.can_manage_tasks %}
+                        You can add, edit, and delete tasks for your campus.
+                        {% else %}
+                        You can view tasks but cannot modify them.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="mt-3 pt-3 border-top">
+                <h6 class="mb-3">Quick Actions</h6>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ url_for('teacher_students') }}" class="btn btn-primary">
+                        <i class="fas fa-users me-2"></i>View Students
+                    </a>
+                    <a href="{{ url_for('teacher_tasks') }}" class="btn btn-success">
+                        <i class="fas fa-tasks me-2"></i>View Tasks
+                    </a>
+                    {% if teacher_can_manage_students %}
+                    <a href="{{ url_for('teacher_add_student') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-user-plus me-2"></i>Add Student
+                    </a>
+                    {% endif %}
+                    {% if teacher_can_manage_tasks %}
+                    <a href="{{ url_for('teacher_add_task') }}" class="btn btn-outline-success">
+                        <i class="fas fa-plus me-2"></i>Add Task
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('practice_editor') }}" class="btn btn-info">
+                        <i class="fas fa-code me-2"></i>Practice Editor
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Overview Cards -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-3 col-sm-6">
+            <div class="card dashboard-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-graduate fa-2x mb-2 text-primary"></i>
+                    <h4>{{ progress_data.overall_stats.total_students }}</h4>
+                    <p class="text-muted">Students</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card dashboard-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-clipboard-list fa-2x mb-2 text-info"></i>
+                    <h4>{{ progress_data.overall_stats.total_tasks }}</h4>
+                    <p class="text-muted">Tasks</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card dashboard-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-check-circle fa-2x mb-2 text-success"></i>
+                    <h4>{{ progress_data.overall_stats.total_submissions }}</h4>
+                    <p class="text-muted">Submissions</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card dashboard-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-2x mb-2 text-warning"></i>
+                    <h4>{{ progress_data.overall_stats.completion_rate }}%</h4>
+                    <p class="text-muted">Completion</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grade-wise Progress -->
+    <div class="card mb-3">
+        <div class="card-header">
+            <h5><i class="fas fa-graduation-cap me-2"></i> Grade Progress</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Grade</th>
+                            <th>Students</th>
+                            <th>Tasks</th>
+                            <th>Submissions</th>
+                            <th>Completion</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for grade, data in progress_data.grade_wise.items() %}
+                        <tr>
+                            <td><strong>{{ grade }}</strong></td>
+                            <td>{{ data.total_students }}</td>
+                            <td>{{ data.total_tasks }}</td>
+                            <td>{{ data.completed_submissions }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="progress me-2" style="width: 100px; height: 6px;">
+                                        <div class="progress-bar bg-{% if data.completion_rate >= 80 %}success{% elif data.completion_rate >= 50 %}warning{% else %}danger{% endif %}" 
+                                             style="width: {{ data.completion_rate }}%"></div>
+                                    </div>
+                                    <span>{{ data.completion_rate }}%</span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task-wise Progress -->
+    <div class="card">
+        <div class="card-header">
+            <h5><i class="fas fa-tasks me-2"></i> Task Progress</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Task</th>
+                            <th>Completed</th>
+                            <th>Pending</th>
+                            <th>Total Students</th>
+                            <th>Completion</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task_name, data in progress_data.task_wise.items() %}
+                        <tr>
+                            <td><strong>{{ task_name }}</strong></td>
+                            <td>{{ data.completed }}</td>
+                            <td>{{ data.pending }}</td>
+                            <td>{{ data.total_students }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="progress me-2" style="width: 100px; height: 6px;">
+                                        <div class="progress-bar bg-{% if data.completion_rate >= 80 %}success{% elif data.completion_rate >= 50 %}warning{% else %}danger{% endif %}" 
+                                             style="width: {{ data.completion_rate }}%"></div>
+                                    </div>
+                                    <span>{{ data.completion_rate }}%</span>
+                                </div>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('teacher_task_details', task_id=data.task_id) }}" class="btn btn-info btn-sm">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

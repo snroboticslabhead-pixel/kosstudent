@@ -1,0 +1,1656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Practice Editor - Code Lab - TaskBoard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    :root {
+      --primary-color: #007AFF;
+      --success-color: #34C759;
+      --warning-color: #FF9500;
+      --danger-color: #FF3B30;
+      --light-gray: #F5F5F7;
+      --medium-gray: #E5E5E7;
+      --dark-gray: #8E8E93;
+      --card-bg: #FFFFFF;
+      --sidebar-bg: #FAFAFA;
+      --text-primary: #1D1D1F;
+      --text-secondary: #6E6E73;
+      --bot-primary: #6366f1;
+      --bot-secondary: #8b5cf6;
+      --bot-accent: #ec4899;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: var(--light-gray);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* Header Styles */
+    .editor-header {
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--medium-gray);
+      padding: 1.25rem 2rem;
+    }
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+    .header-logo {
+      height: 40px;
+      width: auto;
+    }
+    .header-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+      letter-spacing: -0.01em;
+    }
+    .header-subtitle {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin: 0;
+      font-weight: 400;
+    }
+    .header-bottom {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+    }
+    .header-stats {
+      display: flex;
+      gap: 1.25rem;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    /* Main Layout */
+    .editor-container {
+      display: flex;
+      height: calc(100vh - 110px);
+      overflow: hidden;
+    }
+    /* Sidebar */
+    .editor-sidebar {
+      width: 280px;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--medium-gray);
+      padding: 1.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.75rem;
+      overflow-y: auto;
+      /* Hide scrollbar but keep functionality */
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE and Edge */
+    }
+    .editor-sidebar::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, Opera */
+    }
+    .language-section {
+      background: var(--card-bg);
+      border-radius: 14px;
+      padding: 1.5rem;
+    }
+    .section-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 1.25rem;
+    }
+    .language-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+    .language-card {
+      background: var(--light-gray);
+      border: 2px solid transparent;
+      border-radius: 12px;
+      padding: 1.25rem;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+      text-align: center;
+    }
+    .language-card:hover {
+      background: var(--medium-gray);
+      transform: translateY(-2px);
+    }
+    .language-card.active {
+      border-color: var(--primary-color);
+      background: rgba(0, 122, 255, 0.08);
+    }
+    .language-icon {
+      font-size: 2.25rem;
+      margin-bottom: 0.75rem;
+      height: 2.25rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .language-icon img {
+      max-height: 100%;
+      max-width: 100%;
+      object-fit: contain;
+    }
+    .language-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--text-primary);
+    }
+    /* Editor Area */
+    .editor-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--card-bg);
+      overflow: hidden;
+    }
+    .editor-toolbar {
+      background: var(--light-gray);
+      border-bottom: 1px solid var(--medium-gray);
+      padding: 1rem 1.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .file-info {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+    .file-tab {
+      background: var(--card-bg);
+      border: 1px solid var(--medium-gray);
+      border-radius: 10px 10px 0 0;
+      padding: 0.65rem 1.25rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+    .editor-actions {
+      display: flex;
+      gap: 0.65rem;
+    }
+    /* Code Editor */
+    .code-editor-container {
+      flex: 1;
+      position: relative;
+      border-bottom: 1px solid var(--medium-gray);
+      overflow: hidden;
+    }
+    .CodeMirror {
+      height: 100%;
+      font-size: 15px;
+      font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+      /* Hide scrollbar but keep functionality */
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE and Edge */
+    }
+    .CodeMirror::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, Opera */
+    }
+    /* Controls */
+    .editor-controls {
+      background: var(--light-gray);
+      padding: 1.25rem 1.75rem;
+      border-bottom: 1px solid var(--medium-gray);
+      flex-shrink: 0;
+    }
+    .controls-row {
+      display: flex;
+      gap: 0.85rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .control-btn {
+      border-radius: 10px;
+      font-weight: 500;
+      padding: 0.65rem 1.25rem;
+      font-size: 0.9rem;
+      transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+      border: none;
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      white-space: nowrap;
+    }
+    .control-btn:hover {
+      transform: translateY(-1px);
+    }
+    /* Output Area */
+    .output-area {
+      flex: 0 0 35%;
+      display: flex;
+      flex-direction: column;
+      background: var(--card-bg);
+      overflow: hidden;
+    }
+    .output-header {
+      background: var(--light-gray);
+      border-bottom: 1px solid var(--medium-gray);
+      padding: 1rem 1.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .output-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+    .output-content {
+      flex: 1;
+      padding: 1.75rem;
+      overflow-y: auto;
+      font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+      background: #1D1D1F;
+      color: #FFFFFF;
+      white-space: pre-wrap;
+      line-height: 1.6;
+      font-size: 0.9rem;
+      /* Hide scrollbar but keep functionality */
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE and Edge */
+    }
+    .output-content::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, Opera */
+    }
+    /* Status Indicators */
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    .status-success { color: var(--success-color); }
+    .status-error { color: var(--danger-color); }
+    .status-running { color: var(--warning-color); }
+    /* Buttons */
+    .btn {
+      border-radius: 10px;
+      font-weight: 500;
+      padding: 0.65rem 1.25rem;
+      font-size: 0.9rem;
+      transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+      border: none;
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: white;
+    }
+    .btn-warning {
+      background-color: var(--warning-color);
+      color: white;
+    }
+    .btn-secondary {
+      background-color: var(--dark-gray);
+      color: white;
+    }
+    .btn-success {
+      background-color: var(--success-color);
+      color: white;
+    }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--medium-gray);
+      color: var(--text-secondary);
+    }
+    .btn-outline:hover {
+      background-color: var(--light-gray);
+    }
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 1050;
+    }
+    .toast {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      border: 1px solid var(--medium-gray);
+      overflow: hidden;
+    }
+    /* AI Assistant Styles - Enhanced */
+    .ai-assistant {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+    .ai-chat-button {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--bot-primary), var(--bot-secondary));
+      color: white;
+      border: none;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .ai-chat-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+      transform: translateX(-100%);
+      transition: transform 0.6s;
+    }
+    .ai-chat-button:hover::before {
+      transform: translateX(100%);
+    }
+    .ai-chat-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 16px rgba(99, 102, 241, 0.6);
+    }
+    .ai-chat-window {
+      width: 380px;
+      height: 500px;
+      background: var(--card-bg);
+      border-radius: 16px;
+      border: 1px solid var(--medium-gray);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      display: none;
+      flex-direction: column;
+      margin-bottom: 15px;
+      overflow: hidden;
+    }
+    .ai-chat-window.active {
+      display: flex;
+    }
+    .ai-chat-header {
+      background: linear-gradient(135deg, var(--bot-primary), var(--bot-secondary));
+      color: white;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .ai-chat-title {
+      font-weight: 600;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .ai-chat-close {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    .ai-chat-close:hover {
+      transform: rotate(90deg);
+    }
+    .ai-chat-messages {
+      flex: 1;
+      padding: 1rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .ai-message {
+      max-width: 80%;
+      padding: 0.75rem;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      line-height: 1.4;
+    }
+    .ai-message.user {
+      background: var(--light-gray);
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+    .ai-message.ai {
+      background: rgba(99, 102, 241, 0.08);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+    /* Markdown Styles */
+    .ai-message.ai h1, .ai-message.ai h2, .ai-message.ai h3, .ai-message.ai h4, .ai-message.ai h5, .ai-message.ai h6 {
+      margin-top: 0.5rem;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+    .ai-message.ai h1 { 
+      font-size: 1.5em; 
+      color: var(--bot-primary);
+      border-bottom: 1px solid rgba(99, 102, 241, 0.3);
+      padding-bottom: 0.3rem;
+    }
+    
+    .ai-message.ai h2 { 
+      font-size: 1.3em; 
+      color: var(--bot-secondary);
+    }
+    
+    .ai-message.ai h3 { 
+      font-size: 1.1em; 
+      color: var(--bot-accent);
+    }
+    .ai-message.ai p {
+      margin-bottom: 0.5rem;
+    }
+    .ai-message.ai ul, .ai-message.ai ol {
+      padding-left: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .ai-message.ai li {
+      margin-bottom: 0.25rem;
+    }
+    .ai-message.ai strong {
+      color: var(--bot-primary);
+      font-weight: 600;
+    }
+    .ai-message.ai em {
+      color: var(--bot-secondary);
+      font-style: italic;
+    }
+    .ai-message.ai code {
+      background-color: rgba(99, 102, 241, 0.1);
+      padding: 0.2em 0.4em;
+      border-radius: 3px;
+      font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+      font-size: 0.9em;
+      color: var(--bot-primary);
+    }
+    .ai-message.ai pre {
+      background-color: #1D1D1F;
+      color: #FFFFFF;
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin-bottom: 0.5rem;
+      position: relative;
+      border-left: 3px solid var(--bot-primary);
+    }
+    .ai-message.ai pre code {
+      background: none;
+      padding: 0;
+      color: inherit;
+    }
+    .code-block-wrapper {
+      position: relative;
+      margin-bottom: 0.5rem;
+    }
+    .copy-code-btn {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: rgba(99, 102, 241, 0.8);
+      border: none;
+      border-radius: 4px;
+      color: white;
+      padding: 0.25rem 0.5rem;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .copy-code-btn:hover {
+      background: var(--bot-primary);
+    }
+    .ai-chat-input-container {
+      padding: 1rem;
+      border-top: 1px solid var(--medium-gray);
+      display: flex;
+      gap: 0.5rem;
+    }
+    .ai-chat-input {
+      flex: 1;
+      border: 1px solid var(--medium-gray);
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.85rem;
+      resize: none;
+      max-height: 80px;
+    }
+    .ai-chat-send {
+      background: linear-gradient(135deg, var(--bot-primary), var(--bot-secondary));
+      color: white;
+      border: none;
+      border-radius: 8px;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .ai-chat-send:hover {
+      background: linear-gradient(135deg, var(--bot-secondary), var(--bot-accent));
+    }
+    .ai-chat-typing {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.5rem 0.75rem;
+      background: rgba(99, 102, 241, 0.1);
+      border-radius: 12px;
+      align-self: flex-start;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+    .ai-typing-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--bot-primary);
+      animation: typing 1.4s infinite;
+    }
+    .ai-typing-dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    .ai-typing-dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+    @keyframes typing {
+      0%, 60%, 100% {
+        transform: translateY(0);
+      }
+      30% {
+        transform: translateY(-5px);
+      }
+    }
+    /* Coming Soon Overlay */
+    .coming-soon-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.95);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 2rem;
+      border-radius: 16px;
+      z-index: 10;
+    }
+    .coming-soon-icon {
+      font-size: 3rem;
+      color: var(--warning-color);
+      margin-bottom: 1rem;
+    }
+    .coming-soon-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--text-primary);
+    }
+    .coming-soon-text {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .permission-btn {
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 0.75rem 1.5rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .permission-btn:hover {
+      background: #0066CC;
+      transform: translateY(-2px);
+    }
+    /* Mobile Navigation */
+    .mobile-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--card-bg);
+      border-top: 1px solid var(--medium-gray);
+      padding: 1.25rem;
+      z-index: 1000;
+    }
+    .mobile-nav-tabs {
+      display: flex;
+      justify-content: space-around;
+    }
+    .mobile-nav-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.65rem 1.25rem;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+      color: var(--text-secondary);
+    }
+    .mobile-nav-tab.active {
+      background: var(--light-gray);
+      color: var(--primary-color);
+    }
+    .mobile-nav-tab i {
+      font-size: 1.35rem;
+    }
+    .mobile-nav-tab span {
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+    .mobile-panel {
+      display: none;
+      position: fixed;
+      top: auto;
+      bottom: 80px;
+      left: 0;
+      right: 0;
+      background: var(--card-bg);
+      border-top: 1px solid var(--medium-gray);
+      border-radius: 18px 18px 0 0;
+      padding: 1.75rem;
+      max-height: 55vh;
+      overflow-y: auto;
+      z-index: 999;
+    }
+    .mobile-panel.active {
+      display: block;
+    }
+    .mobile-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+    }
+    .mobile-panel-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .mobile-panel-close {
+      background: none;
+      border: none;
+      font-size: 1.75rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: color 0.2s ease;
+    }
+    .mobile-panel-close:hover {
+      color: var(--text-primary);
+    }
+    .mobile-panel-content {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 1.25rem;
+    }
+    .mobile-action-btn {
+      background: var(--light-gray);
+      border: none;
+      border-radius: 14px;
+      padding: 1.25rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.65rem;
+    }
+    .mobile-action-btn:hover {
+      background: var(--medium-gray);
+      transform: translateY(-2px);
+    }
+    .mobile-action-btn .language-icon {
+      height: 2.75rem;
+      margin-bottom: 0.35rem;
+    }
+    .mobile-action-btn .language-icon img {
+      max-height: 100%;
+      max-width: 100%;
+      object-fit: contain;
+    }
+    .mobile-action-btn span {
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    /* Responsive */
+    @media (max-width: 768px) {
+      .editor-header {
+        padding: 1.25rem;
+      }
+      
+      .header-top {
+        margin-bottom: 1rem;
+      }
+      
+      .header-brand {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.65rem;
+      }
+      
+      .header-bottom {
+        justify-content: space-between;
+      }
+      
+      .editor-container {
+        flex-direction: column;
+        height: calc(100vh - 180px); /* Adjusted for mobile nav */
+      }
+      
+      .editor-sidebar {
+        display: none;
+      }
+      
+      .editor-area {
+        height: 100%;
+      }
+      
+      .output-area {
+        flex: 0 0 40%;
+      }
+      
+      .controls-row {
+        flex-wrap: wrap;
+      }
+      
+      .mobile-nav {
+        display: block;
+      }
+      
+      .mobile-panel {
+        display: none;
+      }
+      /* AI Assistant Mobile Styles */
+      .ai-chat-window {
+        width: calc(100vw - 40px);
+        height: 60vh;
+        right: 20px;
+        left: 20px;
+      }
+    }
+    @media (max-width: 480px) {
+      .header-title {
+        font-size: 1.25rem;
+      }
+      
+      .header-subtitle {
+        font-size: 0.85rem;
+      }
+      
+      .header-stats {
+        display: none;
+      }
+      
+      .controls-row .control-btn {
+        padding: 0.55rem 1rem;
+        font-size: 0.85rem;
+      }
+      
+      .output-content {
+        padding: 1.25rem;
+        font-size: 0.85rem;
+      }
+      
+      .mobile-panel-content {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="editor-header">
+    <div class="header-top">
+      <div class="header-brand">
+        <a href="#" onclick="goBack()" class="btn btn-outline">
+          <i class="fas fa-arrow-left"></i> Back
+        </a>
+        <div>
+          <h1 class="header-title">Practice Editor</h1>
+          <p class="header-subtitle">Code Lab - Experiment with Arduino & Python</p>
+        </div>
+      </div>
+      <button class="btn btn-success" onclick="resetEditor()">
+        <i class="fas fa-redo"></i> Reset Editor
+      </button>
+    </div>
+    <div class="header-bottom">
+      <div class="header-stats">
+        <div class="stat-item">
+          <i class="fas fa-code"></i>
+          <span id="lineCount">0</span> lines
+        </div>
+        <div class="stat-item">
+          <i class="fas fa-file-code"></i>
+          <span id="charCount">0</span> chars
+        </div>
+      </div>
+    </div>
+  </header>
+  <!-- Main Editor -->
+  <div class="editor-container">
+    <!-- Sidebar (Hidden on Mobile) -->
+    <div class="editor-sidebar" id="sidebar">
+      <div class="language-section">
+        <div class="section-title">Programming Language</div>
+        <div class="language-cards">
+          <div class="language-card active" onclick="selectLanguage('arduino')">
+            <div class="language-icon text-primary">
+              <img src="https://i.ibb.co/xpJmggH/image-removebg-preview-22.png" alt="Arduino">
+            </div>
+            <div class="language-name">Arduino</div>
+          </div>
+          <div class="language-card" onclick="selectLanguage('python')">
+            <div class="language-icon text-success">
+              <img src="https://i.ibb.co/DfQvTZMD/image-removebg-preview-23.png" alt="Python">
+            </div>
+            <div class="language-name">Python</div>
+          </div>
+        </div>
+      </div>
+      <div class="language-section">
+        <div class="section-title">Code Templates</div>
+        <div class="d-grid gap-2">
+          <button class="btn btn-outline" onclick="loadTemplate('blink')">
+            <i class="fas fa-lightbulb"></i> Blink LED
+          </button>
+          <button class="btn btn-outline" onclick="loadTemplate('sensor')">
+            <i class="fas fa-thermometer-half"></i> Sensor Read
+          </button>
+          <button class="btn btn-outline" onclick="loadTemplate('hello')">
+            <i class="fas fa-terminal"></i> Hello World
+          </button>
+        </div>
+      </div>
+      <div class="language-section">
+        <div class="section-title">AI Assistant</div>
+        <div class="d-grid gap-2">
+          <button class="btn btn-outline" onclick="showAIComingSoon()">
+            <i class="fas fa-magic"></i> Generate Code
+          </button>
+          <button class="btn btn-outline" onclick="showAIComingSoon()">
+            <i class="fas fa-question-circle"></i> Explain Code
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Editor Area -->
+    <div class="editor-area">
+      <!-- Editor Toolbar -->
+      <div class="editor-toolbar">
+        <div class="file-info">
+          <div class="file-tab">
+            <i class="fas fa-file-code"></i>
+            <span id="fileName">sketch.ino</span>
+          </div>
+        </div>
+        <div class="editor-actions">
+          <button class="btn btn-outline" onclick="copyCode()">
+            <i class="fas fa-copy"></i>
+          </button>
+          <button class="btn btn-outline" onclick="toggleFullscreen()">
+            <i class="fas fa-expand"></i>
+          </button>
+        </div>
+      </div>
+      <!-- Code Editor -->
+      <div class="code-editor-container">
+        <textarea id="codeEditor">void setup() {
+  // Initialize your components here
+  pinMode(LED_BUILTIN, OUTPUT);
+  Serial.begin(9600);
+}
+void loop() {
+  // Main code logic here
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(1000);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(1000);
+  
+  Serial.println("Hello from Arduino!");
+}</textarea>
+      </div>
+      <!-- Controls -->
+      <div class="editor-controls">
+        <div class="controls-row">
+          <button class="btn btn-outline control-btn" onclick="clearOutput()">
+            <i class="fas fa-broom"></i> Clear Output
+          </button>
+          <button id="runBtn" class="btn btn-primary control-btn">
+            <i class="fas fa-play"></i> Run Code
+          </button>
+        </div>
+      </div>
+      <!-- Output Area -->
+      <div class="output-area">
+        <div class="output-header">
+          <div class="output-title">
+            <i class="fas fa-terminal"></i> Console Output
+          </div>
+          <div id="statusIndicator" class="status-indicator">
+            <i class="fas fa-circle status-success"></i>
+            Ready
+          </div>
+        </div>
+        <div class="output-content" id="output">
+<span style="color: #34C759;">╭──────────────────────────────────────────╮</span>
+<span style="color: #34C759;">│           CODE LAB - PRACTICE MODE         │</span>
+<span style="color: #34C759;">╰──────────────────────────────────────────╯</span>
+<span style="color: #FF9500;">→</span> Welcome to the Practice Editor!
+<span style="color: #FF9500;">→</span> Select a language and start coding
+<span style="color: #FF9500;">→</span> Use the quick actions for common tasks
+<span style="color: #007AFF;">Ready to execute code...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Mobile Navigation -->
+  <div class="mobile-nav">
+    <div class="mobile-nav-tabs">
+      <div class="mobile-nav-tab active" onclick="showMobilePanel('language')">
+        <i class="fas fa-code"></i>
+        <span>Language</span>
+      </div>
+      <div class="mobile-nav-tab" onclick="showMobilePanel('templates')">
+        <i class="fas fa-file-code"></i>
+        <span>Templates</span>
+      </div>
+      <div class="mobile-nav-tab" onclick="showMobilePanel('ai')">
+        <i class="fas fa-robot"></i>
+        <span>AI Tools</span>
+      </div>
+    </div>
+  </div>
+  <!-- Mobile Panels -->
+  <div class="mobile-panel" id="languagePanel">
+    <div class="mobile-panel-header">
+      <div class="mobile-panel-title">Select Language</div>
+      <button class="mobile-panel-close" onclick="closeMobilePanels()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="mobile-panel-content">
+      <div class="mobile-action-btn" onclick="selectLanguage('arduino'); closeMobilePanels();">
+        <div class="language-icon text-primary">
+          <img src="https://i.ibb.co/xpJmggH/image-removebg-preview-22.png" alt="Arduino">
+        </div>
+        <span>Arduino</span>
+      </div>
+      <div class="mobile-action-btn" onclick="selectLanguage('python'); closeMobilePanels();">
+        <div class="language-icon text-success">
+          <img src="https://i.ibb.co/DfQvTZMD/image-removebg-preview-23.png" alt="Python">
+        </div>
+        <span>Python</span>
+      </div>
+    </div>
+  </div>
+  <div class="mobile-panel" id="templatesPanel">
+    <div class="mobile-panel-header">
+      <div class="mobile-panel-title">Code Templates</div>
+      <button class="mobile-panel-close" onclick="closeMobilePanels()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="mobile-panel-content">
+      <div class="mobile-action-btn" onclick="loadTemplate('blink'); closeMobilePanels();">
+        <i class="fas fa-lightbulb text-warning"></i>
+        <span>Blink LED</span>
+      </div>
+      <div class="mobile-action-btn" onclick="loadTemplate('sensor'); closeMobilePanels();">
+        <i class="fas fa-thermometer-half text-warning"></i>
+        <span>Sensor Read</span>
+      </div>
+      <div class="mobile-action-btn" onclick="loadTemplate('hello'); closeMobilePanels();">
+        <i class="fas fa-terminal text-warning"></i>
+        <span>Hello World</span>
+      </div>
+    </div>
+  </div>
+  <div class="mobile-panel" id="aiPanel">
+    <div class="mobile-panel-header">
+      <div class="mobile-panel-title">AI Tools</div>
+      <button class="mobile-panel-close" onclick="closeMobilePanels()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="mobile-panel-content">
+      <div class="mobile-action-btn" onclick="showAIComingSoon(); closeMobilePanels();">
+        <i class="fas fa-magic text-primary"></i>
+        <span>Generate Code</span>
+      </div>
+      <div class="mobile-action-btn" onclick="showAIComingSoon(); closeMobilePanels();">
+        <i class="fas fa-question-circle text-primary"></i>
+        <span>Explain Code</span>
+      </div>
+    </div>
+  </div>
+  <!-- AI Assistant -->
+  <div class="ai-assistant">
+    <div class="ai-chat-window" id="aiChatWindow">
+      <div class="coming-soon-overlay">
+        <div class="coming-soon-icon">
+          <i class="fas fa-tools"></i>
+        </div>
+        <div class="coming-soon-title">AI Assistant Coming Soon</div>
+        <div class="coming-soon-text">
+          The AI Assistant feature is currently under development and will be available soon. 
+          To access this feature, please request permission from your teacher.
+        </div>
+        <button class="permission-btn" onclick="requestTeacherPermission()">
+          <i class="fas fa-user-graduate"></i> Request Teacher Permission
+        </button>
+      </div>
+      <div class="ai-chat-header">
+        <div class="ai-chat-title">
+          <i class="fas fa-robot"></i> TaskBoard Bot
+        </div>
+        <button class="ai-chat-close" onclick="toggleAIChat()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="ai-chat-messages" id="aiChatMessages">
+        <!-- Initial message will be added by JavaScript -->
+      </div>
+      <div class="ai-chat-input-container">
+        <textarea class="ai-chat-input" id="aiChatInput" placeholder="Ask me anything about your code..."></textarea>
+        <button class="ai-chat-send" onclick="sendAIMessage()">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+    </div>
+    <button class="ai-chat-button" onclick="toggleAIChat()">
+      <i class="fas fa-robot"></i>
+    </button>
+  </div>
+  <!-- Toast Container -->
+  <div class="toast-container"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/clike/clike.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/matchbrackets.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/closebrackets.js"></script>
+  <script>
+    let currentLanguage = "arduino";
+    let editor;
+    const userType = "{{ user_type }}";
+    let activePanel = null;
+    
+    // Initialize editor
+    function initEditor() {
+      if (editor) {
+        editor.toTextArea();
+      }
+      
+      editor = CodeMirror.fromTextArea(document.getElementById("codeEditor"), {
+        mode: currentLanguage === 'arduino' ? "text/x-c++src" : "python",
+        lineNumbers: true,
+        theme: "default",
+        indentUnit: 2,
+        smartIndent: true,
+        matchBrackets: true,
+        autoCloseBrackets: true,
+        lineWrapping: true,
+        extraKeys: {
+          "Ctrl-Space": "autocomplete",
+          "Ctrl-/": "toggleComment",
+          "Tab": "indentMore"
+        }
+      });
+      
+      // Update stats
+      function updateStats() {
+        const content = editor.getValue();
+        document.getElementById('lineCount').textContent = editor.lineCount();
+        document.getElementById('charCount').textContent = content.length;
+      }
+      editor.on("change", updateStats);
+      updateStats();
+    }
+    
+    // Initialize on load
+    initEditor();
+    
+    const output = document.getElementById("output");
+    const statusIndicator = document.getElementById("statusIndicator");
+    
+    // Show toast notification
+    function showToast(message, type = 'success') {
+      const toastContainer = document.querySelector('.toast-container');
+      const toastId = 'toast-' + Date.now();
+      const iconClass = type === 'success' ? 'fa-check-circle text-success' : 'fa-exclamation-circle text-danger';
+      
+      const toast = document.createElement('div');
+      toast.id = toastId;
+      toast.className = 'toast show';
+      toast.setAttribute('role', 'alert');
+      toast.innerHTML = `
+        <div class="toast-header">
+          <i class="fas ${iconClass} me-1"></i>
+          <strong class="me-auto">${type === 'success' ? 'Success' : 'Error'}</strong>
+          <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body">
+          ${message}
+        </div>
+      `;
+      
+      toastContainer.appendChild(toast);
+      
+      // Auto remove after 3 seconds
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
+    }
+    
+    // Select language
+    function selectLanguage(language) {
+      currentLanguage = language;
+      
+      // Update active state in desktop sidebar
+      document.querySelectorAll('.language-card').forEach(card => {
+        card.classList.remove('active');
+      });
+      
+      // Find and activate the correct language card
+      const languageCards = document.querySelectorAll('.language-card');
+      languageCards.forEach(card => {
+        const languageName = card.querySelector('.language-name').textContent.toLowerCase();
+        if (languageName === language) {
+          card.classList.add('active');
+        }
+      });
+      
+      // Update file name
+      const fileName = language === 'arduino' ? 'sketch.ino' : 'script.py';
+      document.getElementById('fileName').textContent = fileName;
+      
+      // Set default code based on language
+      const defaultCode = language === 'arduino' 
+        ? `void setup() {
+  // Initialize your components here
+  pinMode(LED_BUILTIN, OUTPUT);
+  Serial.begin(9600);
+}
+void loop() {
+  // Main code logic here
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(1000);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(1000);
+  
+  Serial.println("Hello from Arduino!");
+}`
+        : `# Welcome to Python Practice Mode
+print("Hello, World!")
+# Basic operations
+name = "Student"
+age = 15
+print(f"Name: {name}, Age: {age}")
+# Simple calculations
+result = 10 + 5
+print(f"10 + 5 = {result}")
+# Loop example
+for i in range(5):
+    print(f"Count: {i}")`;
+      
+      editor.setValue(defaultCode);
+      
+      // Update editor mode
+      editor.setOption("mode", language === 'arduino' ? "text/x-c++src" : "python");
+      
+      showToast(`Switched to ${language.charAt(0).toUpperCase() + language.slice(1)}`);
+    }
+    
+    // Reset editor
+    function resetEditor() {
+      const defaultCode = currentLanguage === 'arduino' 
+        ? `void setup() {
+  // Initialize your components here
+  pinMode(LED_BUILTIN, OUTPUT);
+  Serial.begin(9600);
+}
+void loop() {
+  // Main code logic here
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(1000);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(1000);
+  
+  Serial.println("Hello from Arduino!");
+}`
+        : `# Welcome to Python Practice Mode
+print("Hello, World!")
+# Basic operations
+name = "Student"
+age = 15
+print(f"Name: {name}, Age: {age}")
+# Simple calculations
+result = 10 + 5
+print(f"10 + 5 = {result}")
+# Loop example
+for i in range(5):
+    print(f"Count: {i}")`;
+      
+      editor.setValue(defaultCode);
+      clearOutput();
+      
+      showToast('Editor reset successfully');
+    }
+    
+    // Copy code
+    function copyCode() {
+      navigator.clipboard.writeText(editor.getValue()).then(() => {
+        showToast('Code copied to clipboard!');
+      });
+    }
+    
+    // Clear output
+    function clearOutput() {
+      output.innerHTML = `<span style="color: #34C759;">╭──────────────────────────────────────────╮</span>
+<span style="color: #34C759;">│           CODE LAB - PRACTICE MODE         │</span>
+<span style="color: #34C759;">╰──────────────────────────────────────────╯</span>
+<span style="color: #FF9500;">→</span> Output cleared
+<span style="color: #FF9500;">→</span> Ready for new execution
+<span style="color: #007AFF;">Waiting for code execution...</span>`;
+      statusIndicator.innerHTML = '<i class="fas fa-circle status-success"></i> Ready';
+    }
+    
+    // Load template
+    function loadTemplate(template) {
+      let code = '';
+      if (currentLanguage === 'arduino') {
+        switch(template) {
+          case 'blink':
+            code = `void setup() {
+  pinMode(LED_BUILTIN, OUTPUT);
+}
+void loop() {
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(500);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(500);
+}`;
+            break;
+          case 'sensor':
+            code = `void setup() {
+  Serial.begin(9600);
+}
+void loop() {
+  int sensorValue = analogRead(A0);
+  float voltage = sensorValue * (5.0 / 1023.0);
+  
+  Serial.print("Sensor Value: ");
+  Serial.print(sensorValue);
+  Serial.print(" | Voltage: ");
+  Serial.println(voltage);
+  
+  delay(1000);
+}`;
+            break;
+        }
+      } else {
+        switch(template) {
+          case 'hello':
+            code = `print("Hello, World!")
+# String operations
+name = input("Enter your name: ")
+print(f"Hello, {name}!")
+# Math operations
+import math
+radius = 5
+area = math.pi * radius ** 2
+print(f"Area of circle: {area:.2f}")`;
+            break;
+        }
+      }
+      
+      if (code) {
+        editor.setValue(code);
+        showToast(`Loaded ${template} template`);
+      }
+    }
+    
+    // Show AI Coming Soon message
+    function showAIComingSoon() {
+      showToast('AI Assistant is coming soon! Request permission from your teacher.', 'error');
+    }
+    
+    // Request teacher permission for AI Assistant
+    function requestTeacherPermission() {
+      showToast('Permission request sent to your teacher!', 'success');
+      toggleAIChat();
+    }
+    
+    // Toggle fullscreen
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+          console.log(`Error attempting to enable fullscreen: ${err.message}`);
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    }
+    
+    // Mobile panel functions
+    function showMobilePanel(panelType) {
+      // Close all panels first
+      closeMobilePanels();
+      
+      // Update active tab
+      document.querySelectorAll('.mobile-nav-tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      event.currentTarget.classList.add('active');
+      
+      // Show the selected panel
+      const panel = document.getElementById(panelType + 'Panel');
+      panel.classList.add('active');
+      activePanel = panelType;
+    }
+    
+    function closeMobilePanels() {
+      document.querySelectorAll('.mobile-panel').forEach(panel => {
+        panel.classList.remove('active');
+      });
+      
+      // Reset active tab
+      document.querySelectorAll('.mobile-nav-tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      
+      activePanel = null;
+    }
+    
+    // Run Code
+    document.getElementById("runBtn").addEventListener("click", async () => {
+      const code = editor.getValue();
+      
+      statusIndicator.innerHTML = '<i class="fas fa-sync fa-spin status-running"></i> Running...';
+      output.textContent = `Running ${currentLanguage} code...\n${'═'.repeat(50)}\n\n`;
+      
+      try {
+        const response = await fetch("/simulate_run", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            code: code, 
+            language: currentLanguage,
+            task_id: "practice" 
+          })
+        });
+        const data = await response.json();
+        output.textContent += data.output + `\n${'═'.repeat(50)}\n`;
+        
+        if (data.status === "success") {
+          statusIndicator.innerHTML = '<i class="fas fa-check-circle status-success"></i> Execution Successful';
+          showToast('Code executed successfully!');
+        } else {
+          statusIndicator.innerHTML = '<i class="fas fa-times-circle status-error"></i> Execution Failed';
+          showToast('Code execution failed', 'error');
+        }
+      } catch (err) {
+        statusIndicator.innerHTML = '<i class="fas fa-times-circle status-error"></i> Network Error';
+        output.textContent += "Network error: " + err.message;
+        showToast('Network error occurred', 'error');
+      }
+    });
+    
+    // AI Assistant Functions
+    function toggleAIChat() {
+      const chatWindow = document.getElementById('aiChatWindow');
+      chatWindow.classList.toggle('active');
+      
+      if (chatWindow.classList.contains('active')) {
+        document.getElementById('aiChatInput').focus();
+      }
+    }
+    
+    // Add copy buttons to code blocks
+    function addCopyButtons() {
+      const codeBlocks = document.querySelectorAll('.ai-message.ai pre code');
+      codeBlocks.forEach(block => {
+        // Check if we already added a button
+        if (block.parentNode.querySelector('.copy-code-btn')) return;
+        const button = document.createElement('button');
+        button.className = 'copy-code-btn';
+        button.innerHTML = '<i class="fas fa-copy"></i> Copy';
+        button.title = 'Copy code';
+        button.addEventListener('click', () => {
+          navigator.clipboard.writeText(block.textContent).then(() => {
+            button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            setTimeout(() => {
+              button.innerHTML = '<i class="fas fa-copy"></i> Copy';
+            }, 2000);
+          });
+        });
+        // We need to wrap the code block in a div to position the button
+        const wrapper = document.createElement('div');
+        wrapper.className = 'code-block-wrapper';
+        block.parentNode.insertBefore(wrapper, block);
+        wrapper.appendChild(block.parentNode.removeChild(block));
+        wrapper.appendChild(button);
+      });
+    }
+    
+    function sendAIMessage() {
+      // Show coming soon message when trying to use AI chat
+      showAIComingSoon();
+      return;
+      
+      // The rest of this function is disabled for now
+      const input = document.getElementById('aiChatInput');
+      const message = input.value.trim();
+      
+      if (!message) return;
+      
+      const messagesContainer = document.getElementById('aiChatMessages');
+      
+      // Add user message
+      const userMessage = document.createElement('div');
+      userMessage.className = 'ai-message user';
+      userMessage.textContent = message;
+      messagesContainer.appendChild(userMessage);
+      
+      // Clear input
+      input.value = '';
+      
+      // Add typing indicator
+      const typingIndicator = document.createElement('div');
+      typingIndicator.className = 'ai-chat-typing';
+      typingIndicator.innerHTML = `
+        <span>TaskBoard Bot is thinking</span>
+        <div class="ai-typing-dot"></div>
+        <div class="ai-typing-dot"></div>
+        <div class="ai-typing-dot"></div>
+      `;
+      messagesContainer.appendChild(typingIndicator);
+      
+      // Scroll to bottom
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      
+      // Get conversation history
+      const conversationHistory = [];
+      const messageElements = messagesContainer.querySelectorAll('.ai-message');
+      
+      messageElements.forEach(el => {
+        conversationHistory.push({
+          role: el.classList.contains('user') ? 'user' : 'assistant',
+          content: el.textContent
+        });
+      });
+      
+      // Add current user message to history
+      conversationHistory.push({
+        role: 'user',
+        content: message
+      });
+      
+      // Send to AI
+      fetch("/ai_chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: conversationHistory })
+      })
+      .then(function(response) {
+        return response.json();
+      })
+      .then(function(data) {
+        // Remove typing indicator
+        if (typingIndicator.parentNode) {
+          typingIndicator.parentNode.removeChild(typingIndicator);
+        }
+        
+        if (data.status === "success") {
+          // Add AI response with markdown parsing
+          const aiMessage = document.createElement('div');
+          aiMessage.className = 'ai-message ai';
+          aiMessage.innerHTML = marked.parse(data.response);
+          messagesContainer.appendChild(aiMessage);
+          
+          // Add copy buttons to code blocks
+          addCopyButtons();
+        } else {
+          // Add error message
+          const errorMessage = document.createElement('div');
+          errorMessage.className = 'ai-message ai';
+          errorMessage.textContent = "Sorry, I encountered an error. Please try again.";
+          messagesContainer.appendChild(errorMessage);
+        }
+        
+        // Scroll to bottom
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      })
+      .catch(function(err) {
+        // Remove typing indicator
+        if (typingIndicator.parentNode) {
+          typingIndicator.parentNode.removeChild(typingIndicator);
+        }
+        
+        // Add error message
+        const errorMessage = document.createElement('div');
+        errorMessage.className = 'ai-message ai';
+        errorMessage.textContent = "Network error. Please check your connection and try again.";
+        messagesContainer.appendChild(errorMessage);
+        
+        // Scroll to bottom
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      });
+    }
+    
+    // Handle Enter key in AI chat input
+    document.getElementById('aiChatInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendAIMessage();
+      }
+    });
+    
+    // Back button navigation function
+    function goBack() {
+      if (userType === 'student') {
+        window.location.href = "{{ url_for('student_dashboard') }}";
+      } else if (userType === 'teacher') {
+        window.location.href = "{{ url_for('teacher_dashboard') }}";
+      } else if (userType === 'admin') {
+        window.location.href = "{{ url_for('admin_dashboard') }}";
+      } else {
+        window.location.href = "{{ url_for('login') }}";
+      }
+    }
+    
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', function() {
+      // Set initial state
+      updateStats();
+      
+      // Set initial AI message
+      const initialMessage = `# Hello! I'm your **TaskBoard Bot** 👋
+I can help you with:
+- **Code explanations** 📝
+- **Debugging assistance** 🐛
+- **Code generation** ✨
+- **Best practices** 💡
+Feel free to ask me anything about your code!`;
+      
+      const messagesContainer = document.getElementById('aiChatMessages');
+      const aiMessage = document.createElement('div');
+      aiMessage.className = 'ai-message ai';
+      aiMessage.innerHTML = marked.parse(initialMessage);
+      messagesContainer.appendChild(aiMessage);
+      addCopyButtons();
+      
+      // Close mobile panels when clicking outside
+      document.addEventListener('click', function(event) {
+        const isClickInsideNav = event.target.closest('.mobile-nav');
+        const isClickInsidePanel = event.target.closest('.mobile-panel');
+        
+        if (!isClickInsideNav && !isClickInsidePanel && activePanel) {
+          closeMobilePanels();
+        }
+      });
+    });
+  </script>
+</body>
+</html>

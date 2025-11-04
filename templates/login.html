@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - TaskBoard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #007AFF;
+            --text-color: #1C1C1E;
+            --text-muted: #8E8E93;
+            --background-color: #f8f9fa;
+            --card-background: #ffffff;
+            --border-color: #e0e0e0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--background-color);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 20px;
+            color: var(--text-color);
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 900px;
+            min-height: 75vh;
+            display: flex;
+            border-radius: 24px;
+            overflow: hidden;
+            background: var(--card-background);
+        }
+
+        .login-form-container {
+            flex: 1;
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .login-image-container {
+            flex: 1;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-image {
+            max-width: 100%;
+            height: auto;
+            max-height: 65vh;
+            object-fit: contain;
+        }
+
+        .login-logo {
+            height: 50px;
+            width: auto;
+            margin-bottom: 1rem;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .form-control, .form-select {
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            padding: 12px 16px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            height: 48px;
+            background: var(--background-color);
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
+            background: var(--card-background);
+        }
+
+        .btn {
+            border-radius: 16px;
+            font-weight: 600;
+            padding: 12px 20px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            height: 48px;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0062cc;
+            transform: translateY(-2px);
+        }
+
+        .alert {
+            border-radius: 16px;
+            padding: 12px 16px;
+            margin-bottom: 1.2rem;
+            border: none;
+        }
+
+        .account-type-selector {
+            display: flex;
+            margin-bottom: 1.5rem;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            background: var(--background-color);
+        }
+
+        .account-type-btn {
+            flex: 1;
+            padding: 14px;
+            text-align: center;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--text-muted);
+        }
+
+        .account-type-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .form-label {
+            font-weight: 600;
+            margin-bottom: 0.6rem;
+            color: var(--text-color);
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-group {
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            background: var(--background-color);
+        }
+
+        .input-group-text {
+            border: none;
+            background: transparent;
+            padding: 12px 16px;
+            font-size: 16px;
+            color: var(--text-muted);
+        }
+
+        .input-group .form-control {
+            border: none;
+            padding-left: 0;
+            background: transparent;
+        }
+
+        .input-group .form-control:focus {
+            box-shadow: none;
+        }
+
+        .login-title {
+            text-align: center;
+            margin-bottom: 0.4rem;
+            color: var(--text-color);
+            font-size: 26px;
+            font-weight: 700;
+        }
+
+        .login-subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+            font-size: 15px;
+        }
+
+        .decorative-shape {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(0, 122, 255, 0.1);
+            z-index: 0;
+        }
+
+        .shape-1 {
+            width: 180px;
+            height: 180px;
+            top: -40px;
+            right: -40px;
+        }
+
+        .shape-2 {
+            width: 130px;
+            height: 130px;
+            bottom: -25px;
+            left: -25px;
+        }
+
+        .shape-3 {
+            width: 80px;
+            height: 80px;
+            top: 50%;
+            left: 20%;
+            background: rgba(52, 199, 89, 0.1);
+        }
+
+        /* Mobile-specific styles */
+        @media (max-width: 768px) {
+            body {
+                padding: 0;
+                background: var(--card-background);
+            }
+
+            .login-container {
+                flex-direction: column;
+                max-width: 100%;
+                min-height: 100vh;
+                border-radius: 0;
+            }
+
+            .login-form-container {
+                padding: 1.5rem 1.2rem;
+                order: 1;
+            }
+
+            .login-image-container {
+                order: 2;
+                min-height: 35vh;
+                padding: 1rem;
+                background: linear-gradient(135deg, #f0f2f5 0%, #e1e5eb 100%);
+            }
+
+            .login-logo {
+                height: 40px;
+                margin-bottom: 0.8rem;
+            }
+
+            .login-title {
+                font-size: 22px;
+            }
+
+            .login-subtitle {
+                font-size: 14px;
+                margin-bottom: 1.2rem;
+            }
+
+            .form-control, .form-select, .btn {
+                height: 44px;
+                font-size: 14px;
+                padding: 10px 14px;
+            }
+
+            .input-group-text {
+                padding: 10px 14px;
+                font-size: 14px;
+            }
+
+            .account-type-btn {
+                padding: 10px;
+                font-size: 14px;
+            }
+
+            .account-type-selector {
+                margin-bottom: 1.2rem;
+            }
+
+            .decorative-shape {
+                display: none;
+            }
+        }
+
+        /* Extra small mobile styles */
+        @media (max-width: 480px) {
+            .login-form-container {
+                padding: 1.2rem 1rem;
+            }
+
+            .login-title {
+                font-size: 20px;
+            }
+
+            .form-control, .form-select, .btn {
+                height: 42px;
+                font-size: 13px;
+                padding: 8px 12px;
+            }
+
+            .input-group-text {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+
+            .account-type-btn {
+                padding: 8px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-form-container">
+            <img src="https://i.ibb.co/ycT3gt5M/images-removebg-preview.png" alt="Logo" class="login-logo">
+            <h1 class="login-title">Welcome to TaskBoard</h1>
+            <p class="login-subtitle">Sign in to your account to continue</p>
+            
+            {% if error %}
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle me-2"></i> {{ error }}
+            </div>
+            {% endif %}
+            
+            <form method="POST">
+                <div class="mb-3">
+                    <label class="form-label">Account Type</label>
+                    <div class="account-type-selector">
+                        <button type="button" class="account-type-btn active" id="student-btn" onclick="selectAccountType('student')">
+                            <i class="fas fa-user-graduate me-2"></i> Student
+                        </button>
+                        <button type="button" class="account-type-btn" id="teacher-btn" onclick="selectAccountType('teacher')">
+                            <i class="fas fa-chalkboard-teacher me-2"></i> Teacher
+                        </button>
+                        <button type="button" class="account-type-btn" id="admin-btn" onclick="selectAccountType('admin')">
+                            <i class="fas fa-user-tie me-2"></i> Administration
+                        </button>
+                    </div>
+                    <input type="hidden" name="user_type" id="user_type" value="student">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-user"></i>
+                        </span>
+                        <input type="text" name="username" class="form-control" placeholder="Enter username" required>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-lock"></i>
+                        </span>
+                        <input type="password" name="password" class="form-control" placeholder="Enter password" required>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary w-100 mb-3">
+                    <i class="fas fa-sign-in-alt"></i> Sign In
+                </button>
+            </form>
+        </div>
+        
+        <div class="login-image-container">
+            <div class="decorative-shape shape-1"></div>
+            <div class="decorative-shape shape-2"></div>
+            <div class="decorative-shape shape-3"></div>
+            <img src="https://i.ibb.co/L2Js0b2/image-removebg-preview-21.png" alt="Login Illustration" class="login-image">
+        </div>
+    </div>
+
+    <script>
+        function selectAccountType(type) {
+            // Update active button
+            document.getElementById('student-btn').classList.remove('active');
+            document.getElementById('teacher-btn').classList.remove('active');
+            document.getElementById('admin-btn').classList.remove('active');
+            
+            if (type === 'student') {
+                document.getElementById('student-btn').classList.add('active');
+            } else if (type === 'teacher') {
+                document.getElementById('teacher-btn').classList.add('active');
+            } else {
+                document.getElementById('admin-btn').classList.add('active');
+            }
+            
+            // Update hidden input
+            document.getElementById('user_type').value = type;
+        }
+
+        // Add touch feedback for mobile
+        document.querySelectorAll('.btn, .account-type-btn').forEach(button => {
+            button.addEventListener('touchstart', function() {
+                this.style.transform = 'scale(0.98)';
+            });
+            button.addEventListener('touchend', function() {
+                this.style.transform = 'scale(1)';
+            });
+        });
+    </script>
+</body>
+</html>

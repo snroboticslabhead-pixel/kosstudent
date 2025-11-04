@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web IDE - {{ task.title }} - TaskBoard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #007AFF;
+            --success-color: #34C759;
+            --warning-color: #FF9500;
+            --danger-color: #FF3B30;
+            --light-gray: #F5F5F7;
+            --medium-gray: #E5E5E7;
+            --dark-gray: #8E8E93;
+            --card-bg: #FFFFFF;
+            --sidebar-bg: #FAFAFA;
+            --text-primary: #1D1D1F;
+            --text-secondary: #6E6E73;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body { 
+            background-color: var(--light-gray); 
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .navbar {
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--medium-gray);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .navbar-logo {
+            height: 40px;
+            width: auto;
+            margin-right: 12px;
+        }
+        
+        .back-btn {
+            background: transparent;
+            border: 1px solid var(--medium-gray);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+            text-decoration: none;
+            margin-right: 1rem;
+        }
+        
+        .back-btn:hover {
+            background: var(--light-gray);
+            color: var(--text-primary);
+            transform: translateY(-1px);
+        }
+        
+        .main-container {
+            height: calc(100vh - 85px);
+            overflow-y: auto;
+            padding: 0.75rem;
+        }
+        
+        .editor-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid var(--medium-gray);
+            overflow: hidden;
+            margin-bottom: 0.75rem;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .editor-header {
+            background: var(--light-gray);
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--medium-gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .CodeMirror {
+            height: 300px;
+            font-size: 14px;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            border-radius: 0;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .CodeMirror::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .output-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid var(--medium-gray);
+            overflow: hidden;
+            height: 300px;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 0.75rem;
+        }
+        
+        .output-header {
+            background: var(--light-gray);
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--medium-gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .output-content {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            background: #1D1D1F;
+            color: #FFFFFF;
+            white-space: pre-wrap;
+            line-height: 1.5;
+            font-size: 0.8rem;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .output-content::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .task-info {
+            background: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid var(--medium-gray);
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .controls {
+            background: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid var(--medium-gray);
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .controls .form-control {
+            border-radius: 8px;
+            border: 1px solid var(--medium-gray);
+            padding: 0.5rem 0.75rem;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+            flex: 1;
+            min-width: 150px;
+        }
+        
+        .controls .form-control:focus,
+        .form-select:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
+        }
+        
+        .controls .btn {
+            border-radius: 8px;
+            border: none;
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+        
+        .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        .btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-warning {
+            background-color: var(--warning-color);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background-color: var(--dark-gray);
+            color: white;
+        }
+        
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .btn-info {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--medium-gray);
+            color: var(--text-secondary);
+        }
+        
+        .btn-outline:hover {
+            background-color: var(--light-gray);
+        }
+        
+        .status-success { 
+            color: var(--success-color); 
+        }
+        
+        .status-error { 
+            color: var(--danger-color); 
+        }
+        
+        .status-running { 
+            color: var(--warning-color); 
+        }
+        
+        .file-tabs {
+            display: flex;
+            gap: 0.4rem;
+            margin-bottom: 0.75rem;
+            align-items: center;
+        }
+        
+        .file-tab {
+            padding: 0.5rem 1rem;
+            background: var(--light-gray);
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border: 1px solid transparent;
+        }
+        
+        .file-tab.active {
+            background: var(--card-bg);
+            border: 1px solid var(--medium-gray);
+            border-bottom: none;
+        }
+        
+        .read-only-badge {
+            background: rgba(52, 199, 89, 0.1);
+            color: var(--success-color);
+            padding: 0.2rem 0.5rem;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.2rem;
+            margin-left: 0.4rem;
+        }
+        
+        .editor-actions {
+            display: flex;
+            gap: 0.4rem;
+            align-items: center;
+        }
+        
+        .line-count {
+            background: var(--light-gray);
+            padding: 0.3rem 0.6rem;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        /* Progress Steps - Now below controls */
+        .progress-steps {
+            background: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid var(--medium-gray);
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            justify-content: space-between;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .progress-steps::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.4rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: var(--light-gray);
+            color: var(--text-secondary);
+            white-space: nowrap;
+            min-width: fit-content;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .step.active {
+            background: var(--primary-color);
+            color: white;
+            transform: scale(1.05);
+        }
+        
+        .step.completed {
+            background: var(--success-color);
+            color: white;
+        }
+        
+        .step-icon {
+            font-size: 0.7rem;
+            flex-shrink: 0;
+        }
+        
+        .step-connector {
+            flex: 1;
+            height: 2px;
+            background: var(--medium-gray);
+            min-width: 10px;
+            max-width: 30px;
+            border-radius: 1px;
+        }
+        
+        .submission-info {
+            background: var(--light-gray);
+            border-radius: 10px;
+            padding: 0.75rem;
+            margin-top: 0.75rem;
+        }
+        
+        .editor-wrapper {
+            position: relative;
+        }
+        
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+            max-width: 300px;
+        }
+        
+        .toast {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            border: 1px solid var(--medium-gray);
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .editor-title {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .badge {
+            border-radius: 8px;
+            padding: 0.3rem 0.6rem;
+            font-weight: 500;
+            font-size: 0.7rem;
+        }
+        
+        .validation-correct { 
+            color: var(--success-color); 
+        }
+        
+        .validation-partial { 
+            color: var(--warning-color); 
+        }
+        
+        .validation-incorrect { 
+            color: var(--danger-color); 
+        }
+        
+        .task-info h6 {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        
+        .task-info p {
+            margin-bottom: 0.4rem;
+            font-size: 0.8rem;
+            line-height: 1.4;
+        }
+        
+        .task-info p strong {
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        
+        .task-info .text-muted {
+            color: var(--text-secondary) !important;
+            font-size: 0.8rem;
+        }
+        
+        .submission-info h6 {
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        
+        .submission-info p {
+            margin-bottom: 0.4rem;
+            font-size: 0.75rem;
+        }
+        
+        /* Error Display Styles */
+        .error-display {
+            background: rgba(255, 59, 48, 0.1);
+            border: 1px solid rgba(255, 59, 48, 0.3);
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-top: 0.5rem;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            font-size: 0.8rem;
+            color: var(--danger-color);
+        }
+        
+        .error-display h6 {
+            color: var(--danger-color);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+        }
+        
+        .error-display pre {
+            background: rgba(255, 59, 48, 0.05);
+            padding: 0.5rem;
+            border-radius: 4px;
+            margin: 0.5rem 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        /* Mobile-first responsive design */
+        @media (max-width: 576px) {
+            .navbar {
+                padding: 0.75rem 0;
+            }
+            
+            .navbar-brand {
+                font-size: 0.95rem;
+            }
+            
+            .navbar-logo {
+                height: 28px;
+            }
+            
+            .back-btn {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.8rem;
+                margin-right: 0.5rem;
+            }
+            
+            .main-container {
+                padding: 0.5rem;
+                height: calc(100vh - 75px);
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 0.5rem;
+            }
+            
+            .controls .form-control {
+                margin-bottom: 0.4rem;
+                font-size: 0.8rem;
+                min-width: 100%;
+            }
+            
+            .controls .btn {
+                width: 100%;
+                padding: 0.6rem;
+                font-size: 0.8rem;
+            }
+            
+            .progress-steps {
+                padding: 0.5rem;
+                gap: 0.2rem;
+                justify-content: flex-start;
+            }
+            
+            .step {
+                padding: 0.3rem 0.5rem;
+                font-size: 0.7rem;
+                gap: 0.2rem;
+            }
+            
+            .step-connector {
+                min-width: 8px;
+                max-width: 15px;
+                height: 1.5px;
+            }
+            
+            .CodeMirror {
+                height: 250px;
+                font-size: 13px;
+            }
+            
+            .output-container {
+                height: 250px;
+            }
+            
+            .output-content {
+                padding: 0.75rem;
+                font-size: 0.75rem;
+            }
+            
+            .editor-header, .output-header {
+                padding: 0.5rem 0.75rem;
+            }
+            
+            .editor-title {
+                font-size: 0.85rem;
+            }
+            
+            .line-count {
+                font-size: 0.7rem;
+                padding: 0.2rem 0.5rem;
+            }
+            
+            .file-tab {
+                padding: 0.4rem 0.75rem;
+                font-size: 0.8rem;
+            }
+            
+            .task-info {
+                padding: 0.75rem;
+            }
+            
+            .task-info h6 {
+                font-size: 0.9rem;
+            }
+            
+            .task-info p {
+                font-size: 0.75rem;
+            }
+            
+            .toast-container {
+                top: 15px;
+                right: 15px;
+                left: 15px;
+                max-width: none;
+            }
+        }
+        
+        @media (min-width: 577px) and (max-width: 768px) {
+            .controls {
+                flex-wrap: wrap;
+            }
+            
+            .controls .form-control {
+                min-width: 200px;
+            }
+            
+            .progress-steps {
+                gap: 0.3rem;
+            }
+            
+            .step {
+                font-size: 0.8rem;
+                padding: 0.4rem 0.6rem;
+            }
+            
+            .CodeMirror {
+                height: 280px;
+            }
+            
+            .output-container {
+                height: 280px;
+            }
+        }
+        
+        @media (min-width: 769px) and (max-width: 992px) {
+            .progress-steps {
+                gap: 0.5rem;
+            }
+            
+            .CodeMirror {
+                height: 320px;
+            }
+            
+            .output-container {
+                height: 320px;
+            }
+        }
+        
+        @media (min-width: 993px) {
+            .CodeMirror {
+                height: 380px;
+            }
+            
+            .output-container {
+                height: 380px;
+            }
+            
+            .main-container {
+                padding: 1rem;
+            }
+            
+            .progress-steps {
+                gap: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-light">
+        <div class="container-fluid">
+            <div class="d-flex align-items-center">
+                <a href="#" onclick="goBack()" class="back-btn">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+                <div>
+                    <h5 class="mb-0">{{ task.title }}</h5>
+                    <small class="text-muted">{{ task.language|title }}</small>
+                </div>
+            </div>
+            <div class="d-flex align-items-center">
+                <span class="badge bg-{{ 'success' if submission else 'warning' }} me-2">
+                    {{ 'Completed' if submission else 'Pending' }}
+                </span>
+                {% if submission %}
+                <button class="btn btn-success" disabled>
+                    <i class="fas fa-check-circle me-1"></i> Submitted
+                </button>
+                {% else %}
+                <button id="submitBtn" class="btn btn-success" disabled>
+                    <i class="fas fa-check me-1"></i> Submit
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+    <div class="main-container">
+        <div class="row g-3">
+            <div class="col-lg-8">
+                <!-- File Tabs -->
+                <div class="file-tabs">
+                    <div class="file-tab active" id="code-tab">
+                        <i class="fas fa-code"></i> {{ 'sketch.ino' if task.language == 'arduino' else 'script.py' }}
+                        {% if submission %}
+                        <div class="read-only-badge">
+                            <i class="fas fa-lock"></i> Read Only
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <!-- Editor Container -->
+                <div class="editor-wrapper">
+                    <div class="editor-container">
+                        <div class="editor-header">
+                            <div class="editor-title">
+                                <i class="fas fa-code"></i> Code Editor
+                            </div>
+                            <div class="editor-actions">
+                                <span class="line-count">Lines: <span id="lineCount">0</span></span>
+                                <button class="btn btn-sm btn-outline" onclick="copyCode()">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="panel-body p-0">
+                            <textarea id="codeEditor">{{ submission.code if submission else ('void setup() {\n  // Your setup code here\n}\n\nvoid loop() {\n  // Your main code here\n}' if task.language == 'arduino' else 'print("Hello Kakatiya")') }}</textarea>
+                        </div>
+                    </div>
+                </div>
+                <!-- Controls -->
+                <div class="controls">
+                    <button id="runBtn" class="btn btn-primary">
+                        <i class="fas fa-play me-1"></i> Run
+                    </button>
+                    <button id="clearBtn" class="btn btn-secondary">
+                        <i class="fas fa-broom me-1"></i> Clear
+                    </button>
+                </div>
+                <!-- Progress Steps - Now below controls -->
+                <div class="progress-steps">
+                    <div class="step" id="step1">
+                        <i class="fas fa-code step-icon"></i>
+                        <span>Code</span>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step" id="step2">
+                        <i class="fas fa-play step-icon"></i>
+                        <span>Run</span>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step" id="step3">
+                        <i class="fas fa-check-circle step-icon"></i>
+                        <span>Validate</span>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step" id="step4">
+                        <i class="fas fa-paper-plane step-icon"></i>
+                        <span>Submit</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <!-- Output Container -->
+                <div class="output-container">
+                    <div class="output-header">
+                        <div>
+                            <i class="fas fa-terminal me-1"></i> Console Output
+                        </div>
+                        <div id="statusIndicator">
+                            {% if submission %}
+                            <span class="status-success"><i class="fas fa-check-circle"></i> Completed</span>
+                            {% else %}
+                            <span class="text-muted">Waiting...</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="output-content" id="output">{{ submission.output if submission else 'Output will appear here...' }}</div>
+                </div>
+                <!-- Task Info -->
+                <div class="task-info">
+                    <h6><i class="fas fa-info-circle me-1"></i> Task Information</h6>
+                    <p><strong>Description:</strong></p>
+                    <p class="text-muted">{{ task.description }}</p>
+                    <div class="row">
+                        <div class="col-6">
+                            <p><strong>Language:</strong></p>
+                            <p class="text-muted">{{ task.language }}</p>
+                        </div>
+                        <div class="col-6">
+                            <p><strong>Target:</strong></p>
+                            <p class="text-muted">{{ task.campusTarget|join(', ') }}</p>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-6">
+                            <p><strong>Grade:</strong></p>
+                            <p class="text-muted">{{ task.gradeTarget|join(', ') }}</p>
+                        </div>
+                        <div class="col-6">
+                            <p><strong>Status:</strong></p>
+                            <p class="text-muted">
+                                {% if submission %}
+                                <span class="badge bg-success">Completed</span>
+                                <small class="d-block mt-1">{{ submission.submittedAt.strftime('%Y-%m-%d %H:%M') }}</small>
+                                {% else %}
+                                <span class="badge bg-warning">Pending</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Validation Status Display -->
+                    <div id="validationStatus" class="mt-3" style="display: none;">
+                        <h6><i class="fas fa-clipboard-check me-1"></i> Code Validation</h6>
+                        <div id="validationResult" class="p-2 rounded">
+                            <!-- Validation result will appear here -->
+                        </div>
+                        <!-- Error Details Display -->
+                        <div id="errorDetails" class="error-display" style="display: none;">
+                            <h6><i class="fas fa-exclamation-triangle me-1"></i> Error Details</h6>
+                            <div id="errorContent"></div>
+                        </div>
+                    </div>
+                    
+                    {% if submission %}
+                    <div class="submission-info mt-3">
+                        <h6><i class="fas fa-history me-1"></i> Submission Details</h6>
+                        <p><strong>Submitted:</strong> {{ submission.submittedAt.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                        <p><strong>Code Length:</strong> {{ submission.code|length }} characters</p>
+                        <p><strong>Output Length:</strong> {{ submission.output|length }} characters</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Toast Container -->
+    <div class="toast-container"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/clike/clike.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
+    <script>
+        // Global variables
+        const taskId = "{{ task._id }}";
+        const language = "{{ task.language }}";
+        const isCompleted = {{ "true" if submission else "false" }};
+        const userType = "{{ user_type }}";
+        
+        // Initialize editor
+        let editor = CodeMirror.fromTextArea(document.getElementById("codeEditor"), {
+            mode: language === 'arduino' ? "text/x-c++src" : "python",
+            lineNumbers: true,
+            theme: "default",
+            indentUnit: 2,
+            smartIndent: true,
+            matchBrackets: true,
+            autoCloseBrackets: true,
+            lineWrapping: true,
+            readOnly: isCompleted
+        });
+        
+        // Update line count function
+        function updateLineCount() {
+            document.getElementById('lineCount').textContent = editor.lineCount();
+        }
+        
+        // Set up line count tracking
+        editor.on("change", updateLineCount);
+        updateLineCount();
+        
+        // DOM elements
+        const output = document.getElementById("output");
+        const statusIndicator = document.getElementById("statusIndicator");
+        const submitBtn = document.getElementById("submitBtn");
+        const validationStatus = document.getElementById("validationStatus");
+        const validationResult = document.getElementById("validationResult");
+        const errorDetails = document.getElementById("errorDetails");
+        const errorContent = document.getElementById("errorContent");
+        
+        // Progress steps elements
+        const step1 = document.getElementById("step1");
+        const step2 = document.getElementById("step2");
+        const step3 = document.getElementById("step3");
+        const step4 = document.getElementById("step4");
+        
+        // Initialize progress steps function
+        function initializeProgressSteps() {
+            step1.classList.add('active');
+            step2.classList.remove('active', 'completed');
+            step3.classList.remove('active', 'completed');
+            step4.classList.remove('active', 'completed');
+        }
+        
+        // Update progress steps function
+        function updateProgressStep(stepNumber, status) {
+            const steps = [step1, step2, step3, step4];
+            
+            // Reset all steps
+            steps.forEach(function(step) {
+                step.classList.remove('active', 'completed');
+            });
+            
+            // Set completed steps
+            for (let i = 0; i < stepNumber - 1; i++) {
+                if (i < steps.length) {
+                    steps[i].classList.add('completed');
+                }
+            }
+            
+            // Set current active step
+            if (stepNumber <= steps.length) {
+                steps[stepNumber - 1].classList.add('active');
+            }
+        }
+        
+        // Initialize progress
+        initializeProgressSteps();
+        
+        // Show toast notification function
+        function showToast(message, type) {
+            type = type || 'success';
+            const toastContainer = document.querySelector('.toast-container');
+            const toastId = 'toast-' + Date.now();
+            const iconClass = type === 'success' ? 'fa-check-circle text-success' : 
+                              type === 'warning' ? 'fa-exclamation-triangle text-warning' : 
+                              'fa-exclamation-circle text-danger';
+            
+            const toast = document.createElement('div');
+            toast.id = toastId;
+            toast.className = 'toast show';
+            toast.setAttribute('role', 'alert');
+            toast.innerHTML = 
+                '<div class="toast-header">' +
+                    '<i class="fas ' + iconClass + ' me-1"></i>' +
+                    '<strong class="me-auto">' + (type === 'success' ? 'Success' : type === 'warning' ? 'Warning' : 'Error') + '</strong>' +
+                    '<button type="button" class="btn-close" data-bs-dismiss="toast"></button>' +
+                '</div>' +
+                '<div class="toast-body">' +
+                    message +
+                '</div>';
+            
+            toastContainer.appendChild(toast);
+            
+            // Auto remove after 3 seconds
+            setTimeout(function() {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 3000);
+        }
+        
+        // Copy code function
+        function copyCode() {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(editor.getValue()).then(function() {
+                    showToast('Code copied to clipboard!');
+                }).catch(function(err) {
+                    console.error('Failed to copy: ', err);
+                    showToast('Failed to copy code', 'error');
+                });
+            } else {
+                // Fallback for older browsers
+                const textArea = document.createElement("textarea");
+                textArea.value = editor.getValue();
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showToast('Code copied to clipboard!');
+                } catch (err) {
+                    showToast('Failed to copy code', 'error');
+                }
+                document.body.removeChild(textArea);
+            }
+        }
+        
+        // Run Code with automatic validation
+        document.getElementById("runBtn").addEventListener("click", function() {
+            const code = editor.getValue();
+            
+            if (!code.trim()) {
+                output.textContent = "Please write some code before running.";
+                return;
+            }
+            
+            // Update progress to step 2 (Running)
+            updateProgressStep(2, 'running');
+            statusIndicator.innerHTML = '<span class="status-running"><i class="fas fa-sync fa-spin"></i> Running...</span>';
+            output.textContent = 'Running ' + language + ' code...';
+            
+            fetch("/simulate_run", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    code: code, 
+                    language: language,
+                    task_id: taskId 
+                })
+            })
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                output.textContent = data.output;
+                
+                if (data.status === "success") {
+                    statusIndicator.innerHTML = '<span class="status-success"><i class="fas fa-check"></i> Success</span>';
+                    showToast('Code executed successfully! Starting validation...');
+                    
+                    // Step 2: Automatically trigger validation after successful execution
+                    updateProgressStep(3, 'validating');
+                    statusIndicator.innerHTML = '<span class="status-running"><i class="fas fa-sync fa-spin"></i> Validating...</span>';
+                    output.textContent += '\n\n--- Starting Code Validation ---\n';
+                    
+                    return fetch("/validate_code", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ 
+                            task_id: taskId, 
+                            code: code
+                        })
+                    });
+                } else {
+                    statusIndicator.innerHTML = '<span class="status-error"><i class="fas fa-times"></i> Error</span>';
+                    showToast('Code execution failed', 'error');
+                    if (!isCompleted) {
+                        submitBtn.disabled = true;
+                    }
+                    // Reset to step 1 if execution fails
+                    initializeProgressSteps();
+                    throw new Error('Code execution failed');
+                }
+            })
+            .then(function(response) {
+                if (response) {
+                    return response.json();
+                }
+            })
+            .then(function(validateData) {
+                if (validateData && validateData.status === "success") {
+                    // Show validation result
+                    validationStatus.style.display = 'block';
+                    errorDetails.style.display = 'none';
+                    
+                    let validationClass = 'validation-incorrect';
+                    let icon = 'fas fa-times-circle';
+                    
+                    if (validateData.validation_result === "Correct") {
+                        validationClass = 'validation-correct';
+                        icon = 'fas fa-check-circle';
+                        if (!isCompleted) {
+                            submitBtn.disabled = false;
+                            updateProgressStep(4, 'ready');
+                            showToast('Code validated successfully! You can now submit your task.', 'success');
+                        }
+                    } else if (validateData.validation_result === "Partially Correct") {
+                        validationClass = 'validation-partial';
+                        icon = 'fas fa-exclamation-triangle';
+                        if (!isCompleted) {
+                            submitBtn.disabled = true;
+                        }
+                        showToast('Code is partially correct. Please review the requirements.', 'warning');
+                    } else {
+                        validationClass = 'validation-incorrect';
+                        icon = 'fas fa-times-circle';
+                        if (!isCompleted) {
+                            submitBtn.disabled = true;
+                        }
+                        showToast('Code does not meet the requirements.', 'error');
+                        
+                        // Show error details
+                        if (validateData.errors && validateData.errors !== "None") {
+                            errorDetails.style.display = 'block';
+                            errorContent.innerHTML = '<pre>' + validateData.errors + '</pre>';
+                        }
+                    }
+                    
+                    validationResult.innerHTML = 
+                        '<div class="' + validationClass + '">' +
+                            '<i class="' + icon + ' me-2"></i>' +
+                            '<strong>' + validateData.validation_result + '</strong>' +
+                        '</div>' +
+                        '<small class="text-muted mt-1 d-block">' + validateData.feedback + '</small>';
+                    
+                    statusIndicator.innerHTML = '<span class="' + validationClass + '"><i class="' + icon + '"></i> ' + validateData.validation_result + '</span>';
+                    output.textContent += '\nValidation Result: ' + validateData.validation_result;
+                    
+                } else if (validateData) {
+                    statusIndicator.innerHTML = '<span class="status-error"><i class="fas fa-times"></i> Validation Error</span>';
+                    output.textContent += "\nValidation error: " + validateData.message;
+                    showToast('Validation failed: ' + validateData.message, 'error');
+                    if (!isCompleted) {
+                        submitBtn.disabled = true;
+                    }
+                }
+            })
+            .catch(function(err) {
+                if (err.message !== 'Code execution failed') {
+                    statusIndicator.innerHTML = '<span class="status-error"><i class="fas fa-times"></i> Network Error</span>';
+                    output.textContent = "Network error: " + err.message;
+                    showToast('Network error occurred', 'error');
+                    if (!isCompleted) {
+                        submitBtn.disabled = true;
+                    }
+                    // Reset to step 1 if network error
+                    initializeProgressSteps();
+                }
+            });
+        });
+        
+        // Submit Task
+        if (submitBtn) {
+            submitBtn.addEventListener("click", function() {
+                const code = editor.getValue();
+                const outputText = output.textContent;
+                
+                fetch("/submit_task", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ 
+                        task_id: taskId, 
+                        code: code,
+                        output: outputText 
+                    })
+                })
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(data) {
+                    if (data.status === "success") {
+                        showToast('Task submitted successfully!');
+                        setTimeout(function() {
+                            if (userType === 'student') {
+                                window.location.href = "{{ url_for('student_dashboard') }}";
+                            } else if (userType === 'teacher') {
+                                window.location.href = "{{ url_for('teacher_dashboard') }}";
+                            } else {
+                                window.location.href = "{{ url_for('admin_dashboard') }}";
+                            }
+                        }, 1500);
+                    } else {
+                        showToast('Error submitting task: ' + data.message, 'error');
+                    }
+                })
+                .catch(function(err) {
+                    showToast('Network error: ' + err.message, 'error');
+                });
+            });
+        }
+        
+        // Clear Output
+        document.getElementById("clearBtn").addEventListener("click", function() {
+            output.textContent = "Output will appear here...";
+            statusIndicator.innerHTML = "";
+            validationStatus.style.display = 'none';
+            errorDetails.style.display = 'none';
+            if (!isCompleted) {
+                submitBtn.disabled = true;
+            }
+            // Reset progress steps
+            initializeProgressSteps();
+        });
+        
+        // Initialize submit button state
+        if (!isCompleted) {
+            submitBtn.disabled = true;
+        }
+        
+        // Back button navigation function
+        function goBack() {
+            if (userType === 'student') {
+                window.location.href = "{{ url_for('student_dashboard') }}";
+            } else if (userType === 'teacher') {
+                window.location.href = "{{ url_for('teacher_dashboard') }}";
+            } else if (userType === 'admin') {
+                window.location.href = "{{ url_for('admin_dashboard') }}";
+            } else {
+                // Fallback to login if user type is not recognized
+                window.location.href = "{{ url_for('login') }}";
+            }
+        }
+    </script>
+</body>
+</html>

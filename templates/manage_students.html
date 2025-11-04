@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0"><i class="fas fa-users me-2"></i> Student Management</h2>
+        <div class="btn-group">
+            <a href="{{ url_for('add_student') }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus"></i> Add Student
+            </a>
+            <a href="{{ url_for('export_students') }}" class="btn btn-success btn-sm">
+                <i class="fas fa-download"></i> Export
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Student Records</h5>
+        </div>
+        <div class="card-body">
+            <!-- Upload Form -->
+            <div class="card small-gap">
+                <div class="card-header py-2">
+                    <h6 class="mb-0"><i class="fas fa-upload me-2"></i> Bulk Upload Students</h6>
+                </div>
+                <div class="card-body py-2">
+                    <form action="{{ url_for('upload_students') }}" method="POST" enctype="multipart/form-data" class="row g-2 align-items-end">
+                        <div class="col-md-8">
+                            <label class="form-label small">Upload Excel File</label>
+                            <input type="file" name="file" class="form-control form-control-sm" accept=".xlsx" required>
+                            <small class="text-muted">Excel format: name, campus, grade, section</small>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-primary btn-sm w-100">Upload</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Students Table -->
+            {% if students %}
+            <div class="table-responsive">
+                <table class="table table-hover compact-table">
+                    <thead>
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Name</th>
+                            <th>Campus</th>
+                            <th>Grade</th>
+                            <th>Section</th>
+                            <th>Password</th>
+                            <th>Created Date</th>
+                            <th width="90">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in students %}
+                        <tr>
+                            <td><strong>{{ student.studentID }}</strong></td>
+                            <td>{{ student.name }}</td>
+                            <td><span class="badge bg-primary">{{ student.campus }}</span></td>
+                            <td><span class="badge bg-info">{{ student.grade }}</span></td>
+                            <td><span class="badge bg-warning">{{ student.section }}</span></td>
+                            <td><span class="badge bg-success">123456</span></td>
+                            <td>{{ student.createdAt.strftime('%Y-%m-%d') if student.createdAt else 'N/A' }}</td>
+                            <td>
+                                <div class="btn-action-group">
+                                    <a href="{{ url_for('edit_student', student_id=student.studentID) }}" class="btn-action btn-action-edit" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form action="{{ url_for('delete_student', student_id=student.studentID) }}" method="post" style="display:inline;">
+                                        <button type="submit" class="btn-action btn-action-delete" title="Delete" onclick="return confirm('Are you sure you want to delete this student?')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-users fa-3x text-muted mb-2"></i>
+                <h5 class="text-muted">No Students Found</h5>
+                <p class="text-muted">Add students manually or upload an Excel file.</p>
+                <a href="{{ url_for('add_student') }}" class="btn btn-primary">Add First Student</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1"><i class="fas fa-code me-2"></i> Submission Details</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('analytics') }}">Analytics</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('task_details', task_id=task._id) }}">{{ task.title }}</a></li>
+                    <li class="breadcrumb-item active">{{ student.name }}</li>
+                </ol>
+            </nav>
+        </div>
+        <a href="{{ url_for('task_details', task_id=task._id) }}" class="btn btn-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i> Back to Task
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6><i class="fas fa-info-circle me-2"></i> Submission Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <small class="text-muted">Student</small>
+                        <p class="mb-0 fw-semibold">{{ student.name }} ({{ student.studentID }})</p>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">Task</small>
+                        <p class="mb-0 fw-semibold">{{ task.title }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">Language</small>
+                        <p class="mb-0"><span class="badge bg-{{ 'primary' if task.language == 'arduino' else 'success' }}">{{ task.language|title }}</span></p>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">Submitted At</small>
+                        <p class="mb-0">{{ submission.submittedAt.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            <small class="text-muted">Code Length</small>
+                            <p class="mb-0">{{ submission.code|length }} chars</p>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Output Length</small>
+                            <p class="mb-0">{{ submission.output|length }} chars</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="fas fa-terminal me-2"></i> Output</h6>
+                </div>
+                <div class="card-body">
+                    <div class="output-container">
+                        <pre class="mb-0">{{ submission.output }}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6><i class="fas fa-code me-2"></i> Submitted Code</h6>
+                    <div>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="copyCode()">
+                            <i class="fas fa-copy me-1"></i> Copy
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="code-container">
+                        <pre><code id="codeContent">{{ submission.code }}</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.output-container {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    max-height: 300px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.code-container {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.code-container pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.code-container code {
+    font-family: inherit;
+}
+
+@media (max-width: 768px) {
+    .output-container, .code-container {
+        font-size: 12px;
+        padding: 0.75rem;
+    }
+}
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function copyCode() {
+    const codeText = document.getElementById('codeContent').textContent;
+    navigator.clipboard.writeText(codeText).then(() => {
+        // Create a temporary toast notification
+        const toast = document.createElement('div');
+        toast.className = 'toast align-items-center text-white bg-success border-0';
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    Code copied to clipboard!
+                </div>
+            </div>
+        `;
+        
+        // Position the toast
+        toast.style.position = 'fixed';
+        toast.style.top = '20px';
+        toast.style.right = '20px';
+        toast.style.zIndex = '1050';
+        
+        document.body.appendChild(toast);
+        
+        // Show the toast
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        
+        // Remove the toast after it's hidden
+        toast.addEventListener('hidden.bs.toast', () => {
+            document.body.removeChild(toast);
+        });
+    }).catch(err => {
+        console.error('Failed to copy: ', err);
+    });
+}
+</script>
+{% endblock %}

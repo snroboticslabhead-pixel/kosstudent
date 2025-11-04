@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0"><i class="fas fa-edit me-2"></i> Edit Task</h2>
+        <div>
+            <span class="badge bg-primary me-2">{{ teacher.campus }}</span>
+            <a href="{{ url_for('teacher_tasks') }}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left me-1"></i> Back to Tasks
+            </a>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+            {% endif %}
+            <form method="POST">
+                <div class="mb-3">
+                    <label class="form-label">Task Title *</label>
+                    <input type="text" name="title" class="form-control" value="{{ task.title }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Description *</label>
+                    <textarea name="description" class="form-control" rows="4" required>{{ task.description }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Programming Language *</label>
+                    <select name="language" class="form-select" required>
+                        <option value="">Select Language</option>
+                        <option value="arduino" {% if task.language == 'arduino' %}selected{% endif %}>Arduino C++</option>
+                        <option value="python" {% if task.language == 'python' %}selected{% endif %}>Python</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Target Campus *</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="{{ teacher.campus }}" id="campusTarget" name="campusTarget" checked disabled>
+                        <label class="form-check-label" for="campusTarget">{{ teacher.campus }}</label>
+                    </div>
+                    <small class="text-muted">Tasks are assigned to your campus only</small>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Target Grades *</label>
+                    <div class="row g-3">
+                        {% for grade in grades %}
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="gradeTarget" value="{{ grade }}" id="grade{{ loop.index }}" {% if grade in task.gradeTarget %}checked{% endif %}>
+                                <label class="form-check-label" for="grade{{ loop.index }}">{{ grade }}</label>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end">
+                    <a href="{{ url_for('teacher_tasks') }}" class="btn btn-secondary me-2">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Update Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

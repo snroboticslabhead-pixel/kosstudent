@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard">
+    <h2 class="mb-4"><i class="fas fa-chart-bar me-2"></i> Task Completion Analytics</h2>
+    <div class="card">
+        <div class="card-body">
+            {% if progress_data.task_wise %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Task</th>
+                            <th>Completed</th>
+                            <th>Pending</th>
+                            <th>Total Students</th>
+                            <th>Completion Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task_name, data in progress_data.task_wise.items() %}
+                        <tr>
+                            <td><strong>{{ task_name }}</strong></td>
+                            <td>{{ data.completed }}</td>
+                            <td>{{ data.pending }}</td>
+                            <td>{{ data.total_students }}</td>
+                            <td>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-{% if data.completion_rate >= 80 %}success{% elif data.completion_rate >= 50 %}warning{% else %}danger{% endif %}" 
+                                         style="width: {{ data.completion_rate }}%"></div>
+                                </div>
+                                <span>{{ data.completion_rate }}%</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="row g-3 mt-4">
+                <div class="col-md-4">
+                    <div class="card dashboard-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-check-circle fa-2x mb-3 text-success"></i>
+                            <h4>{{ progress_data.overall_stats.total_submissions }}</h4>
+                            <p class="text-muted">Total Completed</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card dashboard-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-clock fa-2x mb-3 text-warning"></i>
+                            <h4>{{ progress_data.overall_stats.total_students * progress_data.overall_stats.total_tasks - progress_data.overall_stats.total_submissions }}</h4>
+                            <p class="text-muted">Total Pending</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card dashboard-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-tasks fa-2x mb-3 text-primary"></i>
+                            <h4>{{ progress_data.overall_stats.total_tasks }}</h4>
+                            <p class="text-muted">Active Tasks</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No Analytics Data</h5>
+                <p class="text-muted">Create tasks to start tracking progress.</p>
+                <a href="{{ url_for('add_task') }}" class="btn btn-primary">Create Tasks</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
